@@ -1,6 +1,8 @@
 import torch
 
-
+"""
+Nota bene: Funziona soltanto su batch bilanciati
+"""
 def AAR(samples_per_class: int):
     def aar(y_real: torch.Tensor, y_pred: torch.Tensor):
         # y_real and y_pred must be expressed as number. Ex. 30

@@ -1,6 +1,7 @@
 #Dataset Files
 training_caip_contest
 training_caip_contest.csv
+*.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

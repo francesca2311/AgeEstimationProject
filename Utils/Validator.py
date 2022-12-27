@@ -17,7 +17,7 @@ class Validator:
         errors = []
         with tqdm(self.dl_val, unit=" batch") as tepoch:
             for batch in tepoch:
-                with torch.no_grad():   
+                with torch.no_grad():
                     x, y = batch
                     x = x.to("cuda")
                     y = y.to("cuda")

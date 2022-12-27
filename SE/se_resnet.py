@@ -6,11 +6,13 @@ from FiLM.film_module import FiLMLayer
 from typing import Type, List, Union
 import torch
 
+# ResNet layers
+# 101: [3, 4, 23, 3]
+# 50: [3, 4, 6, 3] ?
+# 34: [3, 4, 6, 3] ?
+# 18: [2, 2, 2, 2]
 
-def conv3x3(in_planes, out_planes, stride=1):
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
-
-def get_SEBottleneck_FiLM(dim_knowledge=81):
+def get_SEBottleneck_FiLM(dim_knowledge):
     class SEBottleneck_FiLM(nn.Module):
         expansion = 4
 
@@ -57,56 +59,51 @@ def get_SEBottleneck_FiLM(dim_knowledge=81):
             return out
     return SEBottleneck_FiLM
 
-def se_resnet101_filmed(num_classes=1_000, dim_knowledge=81) -> nn.Module:
-    """Constructs a ResNet-101 filmed model.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(get_SEBottleneck_FiLM(dim_knowledge), [3, 4, 23, 3], num_classes=num_classes)
+def se_resnet18_filmed(dim_knowledge=3) -> nn.Module:
+    model = ResNet(get_SEBottleneck_FiLM(dim_knowledge), [2, 2, 2, 2], num_classes=1)
     model.avgpool = nn.AdaptiveAvgPool2d(1)
     return model
 
-def se_resnet50_filmed(num_classes=1_000, dim_knowledge=81, pretrained=False) -> nn.Module:
-    """Constructs a ResNet-101 filmed model.
+class SEResNetFiLMedGroups(nn.Module):
+    def __init__(self, n_classes: int, dim_knowledge: int) -> None:
+        super().__init__()
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(get_SEBottleneck_FiLM(dim_knowledge), [3, 4, 6, 3], num_classes=num_classes)
-    model.avgpool = nn.AdaptiveAvgPool2d(1)
-    if pretrained:
-        model.load_state_dict(load_state_dict_from_url(
-            "https://github.com/moskomule/senet.pytorch/releases/download/archive/seresnet50-60a8950a85b2b.pkl"), strict=False)
-    return model
+        # Create the backbone
+        self.backbone = se_resnet18_filmed(dim_knowledge)
+        # Load into gpu
+        self.backbone = self.backbone.to("cuda")
+        # Get film layers of the backbone
+        self.backbone_film_layers: List[nn.Module] = self._get_film_layers()
 
-def se_resnet18_filmed(num_classes=1_000, dim_knowledge=81, pretrained=False) -> nn.Module:
-    """Constructs a ResNet-101 filmed model.
+        # Replace output FC of backbone
+        self.fc0 = nn.Linear(512, n_classes).to("cuda")
+        self.backbone.fc = self.fc0
 
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
-    model = ResNet(get_SEBottleneck_FiLM(dim_knowledge), [2, 2, 2, 2], num_classes=num_classes)
-    model.avgpool = nn.AdaptiveAvgPool2d(1)
-    return model
+        # Freeze all layers except film layers
+        self.set_grads()
 
-# def se_resnet18(num_classes=1_000):
-#     """Constructs a ResNet-18 model.
-# 
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBasicBlock, [2, 2, 2, 2], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     return model
-# 
-# 
-# def se_resnet34(num_classes=1_000):
-#     """Constructs a ResNet-34 model.
-# 
-#     Args:
-#         pretrained (bool): If True, returns a model pre-trained on ImageNet
-#     """
-#     model = ResNet(SEBasicBlock, [3, 4, 6, 3], num_classes=num_classes)
-#     model.avgpool = nn.AdaptiveAvgPool2d(1)
-#     return model
+    def _get_film_layers(self) -> List:
+        backbone_layers = [self.backbone.layer1, self.backbone.layer2, self.backbone.layer3, self.backbone.layer4]
+        backbone_film_layers = []
+        for layer in backbone_layers:
+            for layer_module in layer.modules():
+                if not layer_module._get_name() == "SEBottleneck_FiLM":
+                    continue
+                backbone_film_layers += [x for x in layer_module.modules() if x._get_name() == "FiLMLayer"]
+        return backbone_film_layers
+
+    def set_grads(self) -> None:
+        self.backbone.eval()
+        self.backbone.requires_grad_(False)
+        for x in self.backbone_film_layers:
+            x.requires_grad_(True)
+        self.fc0.requires_grad_(True)
+
+    def set_knowledge(self, knowledge: torch.Tensor) -> None:
+        for x in self.backbone_film_layers:
+            x.set_knowledge(knowledge)
+
+    def forward(self, x, knowledge):
+        self.set_knowledge(knowledge)
+        out = self.backbone(x)
+        return out

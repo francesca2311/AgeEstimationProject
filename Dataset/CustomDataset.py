@@ -71,3 +71,21 @@ class AgeGroupAndAgeDataset(StandardDataset):
 
     def _get_label(self, label):
         return self._to_categorical(self.label_map[label], self.label_map_n_classes), self._label_function(label-self._starting_class, self._n_classes)
+
+
+class AgeGroupAndAgeDatasetKL(StandardDataset):
+    def __init__(self, df: pd.DataFrame, path_col: str, label_col: str,
+                 label_map: Dict, label_map_n_classes: int, transform_func=None, label_function: str="CAE") -> None:
+        super().__init__(df, path_col, label_col, transform_func, label_function)
+        self.label_map = label_map
+        self.label_map_n_classes = label_map_n_classes
+
+    def _to_kl_labels(self, y, n_classes):
+        std = 1.0
+        _y = np.arange(n_classes)
+        return 1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2))
+
+    def _get_label(self, label):
+        return (self._to_categorical(self.label_map[label], self.label_map_n_classes), 
+                self._label_function(label-self._starting_class, self._n_classes), 
+                self._to_kl_labels(label-self._starting_class, self._n_classes))

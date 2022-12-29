@@ -86,7 +86,7 @@ class DoNothingLayer(nn.Module):
         return x
 
 class BackBone(nn.Module):
-    def __init__(self, pretrained: bool=True) -> None:
+    def __init__(self, pretrained: bool=True, freeze=True) -> None:
         super().__init__()
         # Create the backbone
         self.backbone = get_resnet_filmed(pretrained=pretrained)
@@ -95,7 +95,8 @@ class BackBone(nn.Module):
         # Get film layers of the backbone
         self.backbone_film_layers: List[nn.Module] = self._get_film_layers()
         self.backbone.fc = DoNothingLayer()
-        # Freeze all layers except film layers
+        # Freeze all layers except film layers if requested
+        self.freeze = freeze
         self.set_grads()
 
     def _get_film_layers(self) -> List:
@@ -109,7 +110,7 @@ class BackBone(nn.Module):
         return backbone_film_layers
 
     def set_grads(self) -> None:
-        self.backbone.requires_grad_(False)
+        self.backbone.requires_grad_(not self.freeze)
         for x in self.backbone_film_layers:
             x.requires_grad_(True)
 
@@ -134,5 +135,20 @@ class ResNetFiLMed(nn.Module):
 
     def forward(self, x, knowledge):
         out = self.backbone(x, knowledge)
+        out = self.fc0(out)
+        return out
+
+class ResNetNotFiLMed(nn.Module):
+    def __init__(self, backbone: BackBone, n_classes: int) -> None:
+        super().__init__()
+
+        # Get backbone
+        self.backbone: BackBone = backbone
+        # Create classification head
+        self.fc0 = nn.Linear(512, n_classes).to("cuda")
+        self.fc0.requires_grad_(True)
+
+    def forward(self, x, knowledge=None):
+        out = self.backbone(x)
         out = self.fc0(out)
         return out

@@ -6,9 +6,9 @@ from torch.nn import functional as F
 
 
 class Validator:
-    def __init__(self, custom_dataset: CustomDataset, label_function, batch_size: int=32) -> None:
+    def __init__(self, custom_dataset: CustomDataset, label_function, batch_size: int=32, **kwargs) -> None:
         dm_val: CustomDataLoader = CustomDataLoader(custom_dataset)
-        self.dl_val = dm_val.get_unbalanced_dataloader(batch_size=batch_size, shuffle=False)
+        self.dl_val = dm_val.get_unbalanced_dataloader(batch_size=batch_size, shuffle=False, **kwargs)
         self.label_function = label_function
     
     def validate(self, forward_function):

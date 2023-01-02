@@ -42,12 +42,15 @@ class StandardDataset(torch.utils.data.Dataset):
         _y = np.arange(n_classes)
         return 1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2))
 
+    def _linear(self, y, n_classes):
+        return np.array(y)
+
     def _get_label_function(self, label_function):
         if label_function == "CAE":
             return self._to_categorical
         if label_function == "LDAE":
             return self._to_soft_labels
-        return lambda x: np.array(x)
+        return self._linear
 
     def _get_image(self, image_path):
         return self._transform_func(Image.open(image_path))
@@ -88,4 +91,35 @@ class AgeGroupAndAgeDatasetKL(StandardDataset):
     def _get_label(self, label):
         return (self._to_categorical(self.label_map[label], self.label_map_n_classes), 
                 self._label_function(label-self._starting_class, self._n_classes), 
+                self._to_kl_labels(label-self._starting_class, self._n_classes))
+
+class AgeGroupKLAndAgeDatasetKL(StandardDataset):
+    def __init__(self, df: pd.DataFrame, path_col: str, label_col: str,
+                 label_map_vector: Dict, transform_func=None, label_function: str="CAE") -> None:
+        super().__init__(df, path_col, label_col, transform_func, label_function)
+        self.label_map_vector = label_map_vector
+
+    def _to_kl_labels(self, y, n_classes):
+        std = 1.0
+        _y = np.arange(n_classes)
+        return 1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2))
+
+    def _get_label(self, label):
+        return (self.label_map_vector[label],
+                self._label_function(label-self._starting_class, self._n_classes), 
+                self._to_kl_labels(label-self._starting_class, self._n_classes))
+
+
+class AgeDatasetKL(StandardDataset):
+    def __init__(self, df: pd.DataFrame, path_col: str, label_col: str,
+                 transform_func=None, label_function: str="CAE") -> None:
+        super().__init__(df, path_col, label_col, transform_func, label_function)
+
+    def _to_kl_labels(self, y, n_classes):
+        std = 1.0
+        _y = np.arange(n_classes)
+        return 1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2))
+
+    def _get_label(self, label):
+        return (self._label_function(label-self._starting_class, self._n_classes), 
                 self._to_kl_labels(label-self._starting_class, self._n_classes))

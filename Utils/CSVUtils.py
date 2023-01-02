@@ -59,3 +59,20 @@ def get_n_classes(df: pd.DataFrame, label_col: str) -> int:
 
 def expected_to_value(y: torch.Tensor):
     return torch.sum(torch.arange(y.shape[-1]) * y, axis=-1)
+
+def get_label_map_vector():
+    def _to_kl_labels(y, n_classes):
+        std = 1.0
+        _y = np.arange(n_classes)
+        return 1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2))
+
+    label_map_v = {x: np.zeros(shape=(8)) for x in range(1, 82)}
+
+    for lm in label_map_v:
+        kl = _to_kl_labels(lm, 81)
+        kl_class = np.zeros(shape=(8))
+        for i, value in enumerate(kl):
+            idx = 7 if int((i-1)/10) > 7 else int((i-1)/10)
+            kl_class[idx] += value
+        label_map_v[lm] = kl_class
+    return label_map_v

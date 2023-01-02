@@ -5,11 +5,13 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 from Utils import AAR, CSVUtils, AgeConversion
 from Utils.Validator import Validator
+import pandas as pd
 
 #Caricamento del dataframe
 df = CSVUtils.get_df_from_csv("./training_caip_contest.csv", "./training_caip_contest/")
-
 df_train, df_val = train_test_split(df, test_size=0.25, random_state=42)
+aug = CSVUtils.get_df_from_csv("./augumentation.csv", "./VERAMENTE_NUOVO/")
+df_train = pd.concat([df_train,aug], ignore_index=True)
 df_train = df_train.reset_index(drop=True)
 df_val = df_val.reset_index(drop=True)
 

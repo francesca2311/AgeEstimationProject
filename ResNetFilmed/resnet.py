@@ -44,7 +44,7 @@ class BasicBlockFilmed(nn.Module):
         self.bn1 = norm_layer(planes)
         self.relu = nn.ReLU(inplace=True)
 
-        self.film1 = FiLMLayer(3, planes)
+        self.film1 = FiLMLayer(8, planes)
         
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = norm_layer(planes)

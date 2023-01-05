@@ -1,6 +1,8 @@
 #Dataset Files
 training_caip_contest
 training_caip_contest.csv
+newAugmentationDataset
+augumentation.csv
 *.pt
 
 # Byte-compiled / optimized / DLL files

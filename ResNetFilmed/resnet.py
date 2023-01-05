@@ -138,6 +138,11 @@ class ResNetFiLMed(nn.Module):
         out = self.fc0(out)
         return out
 
+    def forward_detach(self, x, knowledge):
+        out = self.backbone(x, knowledge).detach()
+        out = self.fc0(out)
+        return out
+
 class ResNetNotFiLMed(nn.Module):
     def __init__(self, backbone: BackBone, n_classes: int) -> None:
         super().__init__()

@@ -157,3 +157,8 @@ class ResNetNotFiLMed(nn.Module):
         out = self.backbone(x)
         out = self.fc0(out)
         return out
+
+    def forward_with_repr(self, x, knowledge=None):
+        repr = self.backbone(x)
+        out = self.fc0(repr)
+        return repr, out

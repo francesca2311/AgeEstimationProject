@@ -25,6 +25,7 @@ class Validator:
                     out = forward_function(x)
 
                     for y_real, y_pred in zip(self.label_function(y), self.label_function(out)):
+                        y_pred = torch.round(y_pred)
                         ae = torch.abs(y_real - y_pred)
                         errors.append(ae)
 
@@ -64,6 +65,7 @@ class Validator:
                     out = forward_function(x)
 
                     for y_real, y_pred in zip(self.label_function(y), self.label_function(out)):
+                        y_pred = torch.round(y_pred)
                         ae = torch.abs(y_real - y_pred)
                         errors.append(ae)
 
@@ -103,6 +105,7 @@ class Validator:
                     out = forward_function(x)
 
                     for y_real, y_pred in zip(self.label_function(y), self.label_function(out)):
+                        y_pred = torch.round(y_pred)
                         ae = torch.abs(y_real - y_pred)
                         errors.append(ae)
 
@@ -142,6 +145,7 @@ class Validator:
                     out = forward_function(x)
 
                     for y_real, y_pred in zip(self.label_function(y), self.label_function(out)):
+                        y_pred = torch.round(y_pred)
                         ae = torch.abs(y_real - y_pred)
                         errors.append(ae)
 

@@ -40,7 +40,7 @@ class StandardDataset(torch.utils.data.Dataset):
         std with 2.5 as default as proposed in the paper."""
         std = 2.5
         _y = np.arange(n_classes)
-        return 1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2))
+        return (1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2)))  / (np.sum(1/(std * np.sqrt(2*np.pi)) * np.exp(-np.square(_y-y) / (2*std**2)), axis=-1))
 
     def _linear(self, y, n_classes):
         return np.array(y)
@@ -91,7 +91,7 @@ class AgeGroupAndAgeDatasetKL(StandardDataset):
     def _get_label(self, label):
         return (self._to_categorical(self.label_map[label], self.label_map_n_classes), 
                 self._label_function(label-self._starting_class, self._n_classes), 
-                self._to_kl_labels(label-self._starting_class, self._n_classes))
+                self._to_kl_labels(label-self._starting_class, self._n_classes) / np.sum(self._to_kl_labels(label-self._starting_class, self._n_classes), axis=-1))
 
 class AgeGroupKLAndAgeDatasetKL(StandardDataset):
     def __init__(self, df: pd.DataFrame, path_col: str, label_col: str,
@@ -107,7 +107,7 @@ class AgeGroupKLAndAgeDatasetKL(StandardDataset):
     def _get_label(self, label):
         return (self.label_map_vector[label],
                 self._label_function(label-self._starting_class, self._n_classes), 
-                self._to_kl_labels(label-self._starting_class, self._n_classes))
+                self._to_kl_labels(label-self._starting_class, self._n_classes) / np.sum(self._to_kl_labels(label-self._starting_class, self._n_classes), axis=-1))
 
 
 class AgeDatasetKL(StandardDataset):
@@ -122,4 +122,4 @@ class AgeDatasetKL(StandardDataset):
 
     def _get_label(self, label):
         return (self._label_function(label-self._starting_class, self._n_classes), 
-                self._to_kl_labels(label-self._starting_class, self._n_classes))
+                self._to_kl_labels(label-self._starting_class, self._n_classes) / np.sum(self._to_kl_labels(label-self._starting_class, self._n_classes), axis=-1))

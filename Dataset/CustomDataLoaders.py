@@ -25,7 +25,7 @@ class CustomDataLoader:
         return DataLoader(self._dataset, batch_sampler=sampler, **kwargs)
 
     def get_balanced_class_dataloader2(self, class_ranges, batch_size, **kwargs: Any) -> Tuple[DataLoader, RandomClassBatchSampler2]:
-        sampler = RandomClassBatchSampler(self._dataset.get_img_labels(), class_ranges, batch_size)
+        sampler = RandomClassBatchSampler2(self._dataset.get_img_labels(), class_ranges, batch_size)
         return DataLoader(self._dataset, batch_sampler=sampler, **kwargs), sampler
 
     def get_balanced_class_random_dataset_dataloader(self, df_base_len, class_ranges, batch_size, aug_prob=1.0, **kwargs: Any) -> Tuple[DataLoader, RandomClassAndDatasetBatchSampler]:

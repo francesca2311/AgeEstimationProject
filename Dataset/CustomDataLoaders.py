@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import random
 from sklearn.model_selection import train_test_split
 from Dataset.CustomDataset import StandardDataset
-from Dataset.CustomBatchSampler import BalancedBatchSampler, RandomlyBalancedBatchSampler, RandomClassBatchSampler, RandomClassAndDatasetBatchSampler, RandomClassBatchSampler2
+from Dataset.CustomBatchSampler import BalancedBatchSampler, RandomlyBalancedBatchSampler, RandomClassBatchSampler, RandomClassAndDatasetBatchSampler, RandomClassBatchSampler2, RandomAgeBatchSampler2
 
 
 class CustomDataLoader:
@@ -26,6 +26,10 @@ class CustomDataLoader:
 
     def get_balanced_class_dataloader2(self, class_ranges, batch_size, **kwargs: Any) -> Tuple[DataLoader, RandomClassBatchSampler2]:
         sampler = RandomClassBatchSampler2(self._dataset.get_img_labels(), class_ranges, batch_size)
+        return DataLoader(self._dataset, batch_sampler=sampler, **kwargs), sampler
+
+    def get_balanced_age_dataloader2(self, batch_size, **kwargs: Any) -> Tuple[DataLoader, RandomClassBatchSampler2]:
+        sampler = RandomAgeBatchSampler2(self._dataset.get_img_labels(), batch_size)
         return DataLoader(self._dataset, batch_sampler=sampler, **kwargs), sampler
 
     def get_balanced_class_random_dataset_dataloader(self, df_base_len, class_ranges, batch_size, aug_prob=1.0, **kwargs: Any) -> Tuple[DataLoader, RandomClassAndDatasetBatchSampler]:

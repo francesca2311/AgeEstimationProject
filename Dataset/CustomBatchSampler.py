@@ -170,6 +170,33 @@ class RandomAgeBatchSampler2(BatchSampler):
     def __len__(self) -> int:
         return self.n_batches
 
+class RandomAgeBatchSampler2(BatchSampler):
+    def __init__(self, img_labels: pd.Series, batch_size: int) -> None:
+        self.img_labels = img_labels
+        self.batch_size = batch_size
+        self.n_batches = int(len(img_labels) / self.batch_size)
+        self.indices_per_class_range = self._get_paths_per_class_range()
+        self.p = np.ones(shape=81)
+        self.p = self.p / self.p.sum()
+
+    def _get_paths_per_class_range(self) -> dict:
+        indices_per_class_range = {x: [] for x in range(81)}
+        for i, img_label in enumerate(self.img_labels):
+            indices_per_class_range[img_label-1] += [i]
+        return indices_per_class_range
+
+    def __iter__(self) -> List:
+        n_classes = 81
+        for _ in range(self.n_batches):
+            batch = []
+            for i in range(self.batch_size):
+                r = int(np.random.choice(n_classes, size=1, p=self.p))
+                batch += random.choices(self.indices_per_class_range[r], k=1)
+            yield batch
+        
+    def __len__(self) -> int:
+        return self.n_batches
+
 class RandomClassAndDatasetBatchSampler(BatchSampler):
     def __init__(self, img_labels: pd.Series, df_base_len: int, class_ranges: Sequence[Tuple[int, int]], batch_size: int, aug_prob: float=1.0) -> None:
         self.img_labels = img_labels
